@@ -1,6 +1,7 @@
 import copy
 import random
 import Board_bewegung as Board_enum  # TODO: Change this to the actual file from Team Bewegung
+import Outside_bewegung as Outside_enum # TODO: Change this to the actual file from Team Bewegung
 
 # Wahrscheinlichkeiten für bestimmte Züge abhängig vom Level
 winning = {
@@ -44,6 +45,14 @@ board_positions = {
     (2,2): Board_enum.Board.BOTTOM_RIGHT
 }
 
+block_positions = {
+    1 : Outside_enum.Outside.BLOCK_1,
+    2 : Outside_enum.Outside.BLOCK_2,
+    3 : Outside_enum.Outside.BLOCK_3,
+    4 : Outside_enum.Outside.BLOCK_4,
+    5 : Outside_enum.Outside.BLOCK_5
+}
+
 board = []
 level = 1
 reachy_moveCounter = 0
@@ -72,7 +81,7 @@ corners = [
 
 
 # berechnet die Summe der Einträge einer Gewinnkombination
-def combovalue(k):
+def combovalue(k, b=board):
     if not b:
         b=board
     wert = b[wincombinations[k][0][0]][wincombinations[k][0][1]] + b[wincombinations[k][1][0]][wincombinations[k][1][1]] + b[wincombinations[k][2][0]][wincombinations[k][2][1]];
@@ -84,10 +93,12 @@ def combovalue(k):
 def make_combo_move(n, p):
     global chosen
     # Gewinn verhindern nur mit gewisser Wahrscheinlichkeit
-    if n == -2 and p < (100 - preventing[level]):
+    if n == -2:
+        if p < (100 - preventing[level]):
             return False
     # Gewinnen nur mit gewisser Wahrscheinlichkeit
-    if n == 2 and p < (100 - winning[level]):
+    if n == 2:
+        if p < (100 - winning[level]):
             return False
     #print("trying to make combo move")
     # prüfe, ob eine Kombination passt
@@ -101,7 +112,7 @@ def make_combo_move(n, p):
                     return True
     return False
 
-def setup_trap():
+def setup_trap(p):
     global chosen
     # Fallen stellen nur mit gewisser Wahrscheinlichkeit
     if p < (100 - trap[level]):
@@ -217,8 +228,9 @@ def make_random_move():
         chosen = (x,y)
 
 
-def make_first_move(currentboard):
-    global chosen
+def make_first_move(currentboard,reachy_moves):
+    global  reachy_moveCounter, chosen
+    reachy_moveCounter = reachy_moves
     #print("trying to make first move")
     tmp_board = copy.deepcopy(currentboard)
 
@@ -230,6 +242,12 @@ def make_first_move(currentboard):
         y = random.randint(0, 1)
         tmp_board[x][y * 2] = 1
         chosen = (x,y * 2)
+
+    # Parameters to pass to team bewegung
+    reachy_moveCounter = reachy_moveCounter + 1
+    chosenmove =  board_positions[chosen]
+    currentblock = block_positions[reachy_moveCounter]
+    print(chosenmove , currentblock)
     return tmp_board
 
 
@@ -244,10 +262,14 @@ def make_computer_move(currentboard, currentlevel, reachy_moves, player_moves):
     p = random.randint(0, 100)
     if not make_combo_move(2, p):
         if not make_combo_move(-2, p):
-            if not setup_trap():
+            if not setup_trap(p):
                 if not make_good_move(p):
                     make_random_move()
-    print("CHOSEN MOVE: ", board_positions[chosen])
+
+    # Parameters to pass to team bewegung
     reachy_moveCounter = reachy_moveCounter + 1
+    chosenmove =  board_positions[chosen]
+    currentblock = block_positions[reachy_moveCounter]
+    print(chosenmove , currentblock)
     # TODO: Give chosen_move and reachy_moveCounter to Bewegung
     return board
